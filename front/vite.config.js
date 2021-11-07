@@ -1,13 +1,13 @@
 import path from 'path'
 import vuePlugin from '@vitejs/plugin-vue'
-import getPort from 'get-port'
 import { defineConfig } from 'vite'
+import findFreePorts from "find-free-ports"
 
 export default defineConfig(async ({ command, mode }) => {
   return {
     server: {
       hmr: {
-        port: await getPort()
+        port: (await findFreePorts())[0]
       }
     },
     plugins: [
@@ -31,7 +31,6 @@ export default defineConfig(async ({ command, mode }) => {
         '@live-change/vue-api',
         '@live-change/vue-api-session',
         'debug',
-        '@vue/server-renderer',
         'vite'
       ],
       noExternal: [
