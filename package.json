@@ -47,7 +47,8 @@
     "vue": "^3.2.6",
     "vue-meta": "^3.0.0-alpha.9",
     "vue-router": "^4.0.11",
-    "vue-use": "^0.2.0"
+    "vue-use": "^0.2.0",
+    "get-port": "^6.0.0"
   },
   "devDependencies": {
     "@wdio/selenium-standalone-service": "^7.10.1",

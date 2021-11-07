@@ -16,46 +16,26 @@
   </main>
 </template>
 
-<script>
+<script setup>
 import 'primevue/resources/primevue.min.css'
 import 'primevue/resources/themes/bootstrap4-light-blue/theme.css'
 import 'primeicons/primeicons.css'
 
 import { useMeta, useActiveMeta } from 'vue-meta'
 
-export default {
-  setup () {
-    const { meta } = useMeta({
-      title: 'Live Change Framework Example',
-      meta: [
-        { charset: 'utf-8' }
-      ],
-      htmlAttrs: {
-        lang: 'en',
-        amp: true
-      }
-    })
-    const metadata = useActiveMeta()
-    return { metadata }
-  },
-  metaInfo() {
-    return {
-      title: 'Live Change Framework Example',
-      htmlAttrs: {
-        lang: 'en',
-        amp: true
-      }
-    }
-  },
-  reactive: {
-    session: ['session', 'currentSession']
-  },
-  computed: {
-    api() {
-      return this.$api
-    }
+const { meta } = useMeta({
+  title: 'Live Change Framework Example',
+  meta: [
+    { charset: 'utf-8' }
+  ],
+  htmlAttrs: {
+    lang: 'en',
+    amp: true
   }
-}
+})
+
+const metadata = useActiveMeta()
+
 </script>
 
 <style>
