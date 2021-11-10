@@ -63,6 +63,12 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { reactive, ref, computed, watch, onMounted, onUnmounted} from 'vue'
 import { useDebounceFn } from '@vueuse/core'
+import { live, path, client, actions, uid as uidGenerator } from '@live-change/vue3-ssr'
+
+const todoActions = actions().todo
+const uid = uidGenerator()
+
+console.log('UID', uid)
 
 const confirm = useConfirm()
 const toast = useToast()
@@ -72,19 +78,9 @@ let isMounted = ref(false)
 onMounted(() => isMounted.value = true)
 onUnmounted(() => isMounted.value = false)
 
-
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)) }
 
-let lastId = 0
-const testTasks = [
-  { id: ++lastId, text: "Zainstalować prime vue  1", done: true, order: 0 },
-  { id: ++lastId, text: "Dodać usuwanie", done: true, order: 2 },
-  { id: ++lastId, text: "Dodać dodawanie", done: false, order: 3 },
-  { id: ++lastId, text: "No co tam? Robimy TODO?\nNo robimy!", order: 4 }
-]
-
-let serverTasks = reactive(
-    JSON.parse(JSON.stringify(testTasks)).map(t => ({ ...t, lastUpdate: new Date().toISOString() })))
+let serverTasks = ref([])
 let localTasks = reactive([])
     //JSON.parse(JSON.stringify(testTasks)).map(t => ({ ...t, lastUpdate: '' })))
 let localyDeletedTasks = reactive([])
@@ -104,15 +100,17 @@ function localCache(server, local, property, onChange) {
 const newTask = reactive({ text: '', done: false })
 
 const tasks = computed(() => {
-  const clearServerTasks = serverTasks.filter(task => !localyDeletedTasks.includes(task.id))
+  const srcTasks = (Array.isArray(serverTasks?.value) ? serverTasks?.value : serverTasks?.value?.value) || []
+  console.log("COMPUTE NORMAL TASKS!!!", srcTasks )
+  const clearServerTasks = srcTasks.filter(task => !localyDeletedTasks.includes(task.to))
   const normalTasks = clearServerTasks.map((serverTask) => {
-    let localTask = localTasks.find(task => task.id == serverTask.id)
+    let localTask = localTasks.find(task => task.id == serverTask.to)
     if(!localTask) {
-      localTask = { ... serverTask, lastUpdate: ''}
+      localTask = { ...serverTask, id: serverTask.to, lastUpdate: ''}
       localTasks.push(localTask)
     }
     const task = reactive({
-      id: serverTask.id,
+      id: serverTask.to,
       text: localCache(serverTask, localTask, 'text', () => handleChange()),
       done: localCache(serverTask, localTask, 'done', () => handleChange()),
       order: localCache(serverTask, localTask, 'order')
@@ -120,8 +118,12 @@ const tasks = computed(() => {
     return task
   }).filter(task => !!task).sort((a, b) => a.order - b.order)
   if(!editable) return normalTasks
+  locallyAddedTasks.value = locallyAddedTasks.filter(la => !srcTasks.find(s => s.to == la.id))
+  console.log("NT", normalTasks.map(t => t.id))
+  console.log("SRC", srcTasks.map(t => t.to))
+  console.log("LAT", locallyAddedTasks.value.map(t=>t.id))
   return normalTasks
-      .concat(locallyAddedTasks.filter(la => !serverTasks.find(s => s.id == la.id)))
+      .concat(locallyAddedTasks.value)
       .concat([newTask])
 })
 
@@ -130,12 +132,18 @@ const handleNewTaskText = useDebounceFn(() => addNewTask())
 
 async function addNewTask() {
   const text = newTask.text
-  const order = tasks.value[tasks.value.length  - 2] || 0
-  const id = ++lastId
+  const lastTask = tasks.value[tasks.value.length - 2]
+  const order = lastTask ? lastTask.order + 1 : 0
+  const id = uid()
   locallyAddedTasks.push({ id, text, done: false, order })
   newTask.text = ''
-  sleep(500)
-  serverTasks.push({ id, text, done: false, order })
+  const lastUpdate = new Date()
+
+  const added = await todoActions.createSessionTask({ task: id, text, done: false, order, lastUpdate })
+  //locallyAddedTasks.find(lt => lt.id == id).id = added
+  console.log("ADDED!", added)
+  //sleep(500)
+  //serverTasks.push({ id, text, done: false, order })
   toast.add({ severity: 'info', summary: 'Task added', life: 1500 })
   console.log("ADD NEW TASK!")
 }
@@ -209,12 +217,37 @@ async function saveChanges() {
   saving = true
   try {
     const deletedList = localyDeletedTasks.slice()
-    await sleep(500)
-    serverTasks = JSON.parse(JSON.stringify(localTasks))
-        .filter(task => !deletedList.includes())
-        .map(task => ({ ...task, lastUpdated: task.lastUpdate || new Date().toISOString() }))
+
+    const srcTasks = serverTasks?.value?.value || []
+    let promises = []
+
+    console.log("SAVE SRC TASKS", srcTasks)
+    for(let task of srcTasks) {
+      if(localyDeletedTasks.includes(task.to)) {
+        promises.push(todoActions.deleteSessionTask({ task: task.to }))
+      } else {
+        const localTask = localTasks.find(t => t.id == task.to)
+        if(localTask.lastUpdate > task.lastUpdate) {
+          const update = {}
+          if(task.done != localTask.done) update.done = localTask.done
+          if(task.text != localTask.text) update.text = localTask.text
+          if(task.order != localTask.order) update.order = localTask.order
+          if(Object.keys(update).length > 0) {
+            console.log("UPDATE", update)
+            promises.push(todoActions.updateSessionTask({
+              task: task.to,
+              lastUpdate: localTask.lastUpdate,
+              ...update
+            }))
+          }
+        }
+      }
+    }
+
+    await Promise.all(promises)
+
     lastSave = new Date()
-    toast.add({severity: 'info', summary: 'Saved', life: 1000 })
+    toast.add( {severity: 'info', summary: 'Saved', life: 1000 })
     setTimeout(() => {
       localyDeletedTasks = localyDeletedTasks.filter(id => !deletedList.includes(id))
     }, 5000)
@@ -224,6 +257,11 @@ async function saveChanges() {
   saving = false
 }
 
+serverTasks.value = await live(
+  path().todo.sessionTasksByOrder()
+)
+
+console.log("LOADED SERVER TASKS!", serverTasks.value)
 </script>
 
 <style lang="scss">

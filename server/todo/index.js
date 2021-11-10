@@ -1,7 +1,8 @@
 const app = require('@live-change/framework').app()
 
 const service = app.createServiceDefinition({
-  name: 'todo'
+  name: 'todo',
+  use: [ require('@live-change/session-service') ]
 })
 
 const Task = service.model({
@@ -21,6 +22,10 @@ const Task = service.model({
     },
     order: {
       type: Number
+    },
+    lastUpdate: {
+      type: Date,
+      validation: ['nonEmpty']
     }
   }
 })
