@@ -13,9 +13,9 @@ export default defineConfig(async ({ command, mode }) => {
     plugins: [
       vuePlugin({
         template: {
-          compilerOptions: {
-            whitespace: "preserve",
-          },
+          // compilerOptions: {
+          //   whitespace: "preserve",
+          // },
         },
       })
     ],
@@ -73,4 +73,3 @@ export default defineConfig(async ({ command, mode }) => {
     }],
   }
 })
-
