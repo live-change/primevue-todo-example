@@ -258,7 +258,7 @@ async function saveChanges() {
 }
 
 serverTasks.value = await live(
-  path().todo.sessionTasksByOrder()
+  path().todo.mySessionTasksByOrder()
 )
 
 console.log("LOADED SERVER TASKS!", serverTasks.value)

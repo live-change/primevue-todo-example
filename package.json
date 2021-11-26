@@ -28,6 +28,7 @@
     "@live-change/session-service": "^0.1.7",
     "@live-change/vue-api": "^0.1.7",
     "@live-change/vue-api-session": "^0.1.2",
+    "@live-change/vue3-ssr": "^0.1.6",
     "@live-change/vue3-components": "^0.1.10",
     "@vitejs/plugin-vue": "^1.9.4",
     "@vitejs/plugin-vue-jsx": "^1.2.0",
