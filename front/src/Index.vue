@@ -139,7 +139,7 @@ async function addNewTask() {
   newTask.text = ''
   const lastUpdate = new Date()
 
-  const added = await todoActions.createSessionTask({ task: id, text, done: false, order, lastUpdate })
+  const added = await todoActions.createMySessionTask({ task: id, text, done: false, order, lastUpdate })
   //locallyAddedTasks.find(lt => lt.id == id).id = added
   console.log("ADDED!", added)
   //sleep(500)
@@ -224,7 +224,7 @@ async function saveChanges() {
     console.log("SAVE SRC TASKS", srcTasks)
     for(let task of srcTasks) {
       if(localyDeletedTasks.includes(task.to)) {
-        promises.push(todoActions.deleteSessionTask({ task: task.to }))
+        promises.push(todoActions.deleteMySessionTask({ task: task.to }))
       } else {
         const localTask = localTasks.find(t => t.id == task.to)
         if(localTask.lastUpdate > task.lastUpdate) {
@@ -234,7 +234,7 @@ async function saveChanges() {
           if(task.order != localTask.order) update.order = localTask.order
           if(Object.keys(update).length > 0) {
             console.log("UPDATE", update)
-            promises.push(todoActions.updateSessionTask({
+            promises.push(todoActions.updateMySessionTask({
               task: task.to,
               lastUpdate: localTask.lastUpdate,
               ...update

@@ -25,7 +25,7 @@
     "@live-change/dao": "^0.3.6",
     "@live-change/dao-vue3": "^0.1.16",
     "@live-change/dao-websocket": "^0.3.1",
-    "@live-change/session-service": "^0.1.7",
+    "@live-change/session-service": "^0.1.11",
     "@live-change/vue-api": "^0.1.7",
     "@live-change/vue-api-session": "^0.1.2",
     "@live-change/vue3-ssr": "^0.1.6",

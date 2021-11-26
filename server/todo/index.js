@@ -8,8 +8,8 @@ const service = app.createServiceDefinition({
 const Task = service.model({
   name: 'Task',
   sessionItem: {
-    readAccess: () => true,
-    writeAccess: () => true,
+    sessionReadAccess: () => true,
+    sessionWriteAccess: () => true,
     sortBy: ['order']
   },
   properties: {
